@@ -1,5 +1,5 @@
 # install needed dev-packages
-sudo apt install gcc lipcre3-dev zlib1g-dev libxslt1-dev libgd-dev libgeoip-dev
+sudo apt install gcc libpcre3-dev zlib1g-dev libxslt1-dev libgd-dev libgeoip-dev
 
 # create systemd unit file /lib/systemd/system/nginx.service with the following contents
 [Unit]
