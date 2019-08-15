@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------
 # nginxcompile.sh - Compile nginx 1.17.3 with openssl 1.1.1c, brotli and dynamic tls records support.
 
-# By i81b4u
+# By i81b4u.
   
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
