@@ -1,2 +1,0 @@
-# Modify nginx http server string
-sed -i -e 's/static u_char ngx_http_server_string\[\] = \"Server: nginx\" CRLF\;/static u_char ngx_http_server_string\[\] = \"Server: i81b4u\" CRLF\;/g' /usr/src/nginx/src/http/ngx_http_header_filter_module.c
