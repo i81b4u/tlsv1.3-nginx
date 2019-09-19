@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxcompile.sh - Compile nginx 1.17.3 with openssl 1.1.1c, brotli and dynamic tls records support.
+# nginxcompile.sh - Compile nginx 1.17.3 with openssl 1.1.1d, brotli and dynamic tls records support.
 
 # By i81b4u.
   
@@ -20,10 +20,11 @@
 # Revision history:
 # 2018-11-04 Created by new_script.sh ver. 3.3
 # 2019-08-14 Implemented minor tweaks and checks
+# 2019-09-19 Use openssl v1.1.1d
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.0"
+VERSION="1.0.1"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -79,7 +80,7 @@ checkdeps() {
 help_message() {
   cat <<- _EOF_
   $PROGNAME ver. $VERSION
-  Compile nginx 1.17.3 with openssl 1.1.1c, brotli and dynamic tls records support.
+  Compile nginx 1.17.3 with openssl 1.1.1d, brotli and dynamic tls records support.
 
   $(usage)
 
@@ -168,7 +169,7 @@ fi
 if [ -d "$NGINXBUILDPATH/openssl" ]
 then
 	cd $NGINXBUILDPATH/openssl || error_exit "Failed to make $NGINXBUILDPATH/openssl current directory."
-	git checkout OpenSSL_1_1_1c || error_exit "Failed to checkout openssl release."
+	git checkout OpenSSL_1_1_1d || error_exit "Failed to checkout openssl release."
 else
 	error_exit "Directory $NGINXBUILDPATH/openssl does not exist."
 fi
