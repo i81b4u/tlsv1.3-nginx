@@ -23,6 +23,7 @@
 # 2019-09-19 Use openssl v1.1.1d
 # 2019-09-26 Use nginx 1.17.4
 # 2019-12-27 Use nginx 1.17.7
+# 2020-01-07 Use ngx_http_tls_dyn_size 1.17.7+ 
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
@@ -176,13 +177,13 @@ else
 	error_exit "Directory $NGINXBUILDPATH/openssl does not exist."
 fi
 
-# Apply http_tls_dyn_size patch for nginx >= 1.15.5
+# Apply http_tls_dyn_size patch for nginx >= 1.17.7
 echo "$PROGNAME: Patching nginx..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
         cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-	wget https://raw.githubusercontent.com/nginx-modules/ngx_http_tls_dyn_size/master/nginx__dynamic_tls_records_1.15.5%2B.patch || error_exit "Failed to retrieve dynamic tls records patch."
-	patch -p1 < nginx__dynamic_tls_records_1.15.5+.patch || error_exit "Could not apply dynamic tls records patch."
+	wget https://raw.githubusercontent.com/nginx-modules/ngx_http_tls_dyn_size/master/nginx__dynamic_tls_records_1.17.7%2B.patch || error_exit "Failed to retrieve dynamic tls records patch."
+	patch -p1 < nginx__dynamic_tls_records_1.17.7+.patch || error_exit "Could not apply dynamic tls records patch."
 else
         error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
