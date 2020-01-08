@@ -23,7 +23,8 @@
 # 2019-09-19 Use openssl v1.1.1d
 # 2019-09-26 Use nginx 1.17.4
 # 2019-12-27 Use nginx 1.17.7
-# 2020-01-07 Use ngx_http_tls_dyn_size 1.17.7+ 
+# 2020-01-07 Use ngx_http_tls_dyn_size 1.17.7+
+# 2020-01-08 Reverted to Google's ngx_brotli
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
@@ -151,7 +152,7 @@ fi
 echo "$PROGNAME: Cloning repositories..."
 git clone https://github.com/nginx/nginx.git $NGINXBUILDPATH/nginx || error_exit "Failed to clone nginx."
 git clone https://github.com/openssl/openssl.git $NGINXBUILDPATH/openssl || error_exit "Failed to clone openssl."
-git clone https://github.com/nginx-modules/ngx_brotli.git $NGINXBUILDPATH/ngx_brotli || error_exit "Failed to clone brotli."
+git clone https://github.com/google/ngx_brotli.git $NGINXBUILDPATH/ngx_brotli || error_exit "Failed to clone brotli."
 
 if [ -d "$NGINXBUILDPATH/ngx_brotli" ]
 then
