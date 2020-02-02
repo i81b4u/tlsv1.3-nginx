@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxcompile.sh - Compile nginx 1.17.7 with openssl 1.1.1d, brotli and dynamic tls records support.
+# nginxcompile.sh - Compile nginx 1.17.8 with openssl 1.1.1d, brotli and dynamic tls records support.
 
 # By i81b4u.
   
@@ -26,10 +26,11 @@
 # 2020-01-07 Use ngx_http_tls_dyn_size 1.17.7+
 # 2020-01-08 Reverted to Google's ngx_brotli
 # 2020-01-11 Removed duplicate (and wrong) --pid-path from configure options
+# 2020-02-02 Use nginx 1.17.8
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.0.3"
+VERSION="1.0.4"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -85,7 +86,7 @@ checkdeps() {
 help_message() {
   cat <<- _EOF_
   $PROGNAME ver. $VERSION
-  Compile nginx 1.17.7 with openssl 1.1.1d, brotli and dynamic tls records support.
+  Compile nginx 1.17.8 with openssl 1.1.1d, brotli and dynamic tls records support.
 
   $(usage)
 
@@ -166,7 +167,7 @@ fi
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
 	cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-	git checkout release-1.17.7 || error_exit "Failed to checkout nginx release."
+	git checkout release-1.17.8 || error_exit "Failed to checkout nginx release."
 else
 	error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
