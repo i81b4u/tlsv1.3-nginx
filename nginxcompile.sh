@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxcompile.sh - Compile nginx 1.17.9 with openssl 1.1.1d, brotli and dynamic tls records support.
+# nginxcompile.sh - Compile nginx 1.18.0 with openssl 1.1.1g, brotli and dynamic tls records support.
 
 # By i81b4u.
   
@@ -20,7 +20,7 @@
 # Revision history:
 # 2018-11-04 Created by new_script.sh ver. 3.3
 # 2019-08-14 Implemented minor tweaks and checks
-# 2019-09-19 Use openssl v1.1.1d
+# 2019-09-19 Use openssl 1.1.1d
 # 2019-09-26 Use nginx 1.17.4
 # 2019-12-27 Use nginx 1.17.7
 # 2020-01-07 Use ngx_http_tls_dyn_size 1.17.7+
@@ -28,10 +28,11 @@
 # 2020-01-11 Removed duplicate (and wrong) --pid-path from configure options
 # 2020-02-02 Use nginx 1.17.8
 # 2020-03-07 Use nginx 1.17.9
+# 2020-04-27 Use nginx 1.18.0 and openssl 1.1.1g
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.0.5"
+VERSION="1.0.6"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -87,7 +88,7 @@ checkdeps() {
 help_message() {
   cat <<- _EOF_
   $PROGNAME ver. $VERSION
-  Compile nginx 1.17.9 with openssl 1.1.1d, brotli and dynamic tls records support.
+  Compile nginx 1.18.0 with openssl 1.1.1g, brotli and dynamic tls records support.
 
   $(usage)
 
@@ -168,7 +169,7 @@ fi
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
 	cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-	git checkout release-1.17.9 || error_exit "Failed to checkout nginx release."
+	git checkout release-1.18.0 || error_exit "Failed to checkout nginx release."
 else
 	error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
@@ -176,7 +177,7 @@ fi
 if [ -d "$NGINXBUILDPATH/openssl" ]
 then
 	cd $NGINXBUILDPATH/openssl || error_exit "Failed to make $NGINXBUILDPATH/openssl current directory."
-	git checkout OpenSSL_1_1_1d || error_exit "Failed to checkout openssl release."
+	git checkout OpenSSL_1_1_1g || error_exit "Failed to checkout openssl release."
 else
 	error_exit "Directory $NGINXBUILDPATH/openssl does not exist."
 fi
