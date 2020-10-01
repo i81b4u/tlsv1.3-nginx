@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxcompile.sh - Compile nginx 1.18.0 with openssl 1.1.1g, brotli and dynamic tls records support.
+# nginxcompile.sh - Compile nginx 1.19.3 with openssl 1.1.1h, brotli and dynamic tls records support.
 
 # By i81b4u.
   
@@ -29,10 +29,11 @@
 # 2020-02-02 Use nginx 1.17.8
 # 2020-03-07 Use nginx 1.17.9
 # 2020-04-27 Use nginx 1.18.0 and openssl 1.1.1g
+# 2020-10-01 Use nginx 1.19.3 and openssl 1.1.1h
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.0.6"
+VERSION="1.0.7"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -88,7 +89,7 @@ checkdeps() {
 help_message() {
   cat <<- _EOF_
   $PROGNAME ver. $VERSION
-  Compile nginx 1.18.0 with openssl 1.1.1g, brotli and dynamic tls records support.
+  Compile nginx 1.19.3 with openssl 1.1.1h, brotli and dynamic tls records support.
 
   $(usage)
 
@@ -169,7 +170,7 @@ fi
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
 	cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-	git checkout release-1.18.0 || error_exit "Failed to checkout nginx release."
+	git checkout release-1.19.3 || error_exit "Failed to checkout nginx release."
 else
 	error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
@@ -177,7 +178,7 @@ fi
 if [ -d "$NGINXBUILDPATH/openssl" ]
 then
 	cd $NGINXBUILDPATH/openssl || error_exit "Failed to make $NGINXBUILDPATH/openssl current directory."
-	git checkout OpenSSL_1_1_1g || error_exit "Failed to checkout openssl release."
+	git checkout OpenSSL_1_1_1h || error_exit "Failed to checkout openssl release."
 else
 	error_exit "Directory $NGINXBUILDPATH/openssl does not exist."
 fi
