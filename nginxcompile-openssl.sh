@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxcompile.sh - Compile nginx 1.19.4 with openssl 1.1.1h, brotli and dynamic tls records support.
+# nginxcompile-openssl.sh - Compile nginx 1.19.4 with openssl 1.1.1h, brotli and dynamic tls records support.
 
 # By i81b4u.
   
@@ -15,7 +15,7 @@
 # GNU General Public License at <http://www.gnu.org/licenses/> for
 # more details.
 
-# Usage: nginxcompile.sh [-h|--help]
+# Usage: nginxcompile-openssl.sh [-h|--help]
 
 # Revision history:
 # 2018-11-04 Created by new_script.sh ver. 3.3
