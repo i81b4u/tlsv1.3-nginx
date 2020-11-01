@@ -1,5 +1,8 @@
-# install needed dev-packages
+# packages needed for nginxcompile-openssl.sh
 sudo apt install gcc libpcre3-dev zlib1g-dev libxslt1-dev libgd-dev libgeoip-dev
+
+# packages needed for nginxcompile-boringssl.sh
+sudo apt install mercurial cmake ninja-build g++ golang libunwind-dev libpcre3-dev zlib1g-dev libxslt1-dev libgd-dev libgeoip-dev
 
 # create systemd unit file /lib/systemd/system/nginx.service with the following contents
 [Unit]
