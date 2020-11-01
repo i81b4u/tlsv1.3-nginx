@@ -126,16 +126,16 @@ checkdeps git ninja wget patch sed make || error_exit "Install dependencies befo
 echo "$PROGNAME: Cleaning up previous build..."
 if [ -d "$NGINXBUILDPATH" ]
 then
-	if [ -d "$NGINXBUILDPATH/nginx" ]
-	then
-		rm -rf $NGINXBUILDPATH/nginx || error_exit "Failed to delete directory $NGINXBUILDPATH/nginx"
-	fi
-	if [ -d "$NGINXBUILDPATH/boringssl" ]
-	then
-		rm -rf $NGINXBUILDPATH/boringssl || error_exit "Failed to delete directory $NGINXBUILDPATH/boringssl"
-	fi
+        if [ -d "$NGINXBUILDPATH/nginx" ]
+        then
+                rm -rf $NGINXBUILDPATH/nginx || error_exit "Failed to delete directory $NGINXBUILDPATH/nginx"
+        fi
+        if [ -d "$NGINXBUILDPATH/boringssl" ]
+        then
+                rm -rf $NGINXBUILDPATH/boringssl || error_exit "Failed to delete directory $NGINXBUILDPATH/boringssl"
+        fi
 else
-	mkdir $NGINXBUILDPATH || error_exit "Failed to create directory $NGINXBUILDPATH."
+        mkdir $NGINXBUILDPATH || error_exit "Failed to create directory $NGINXBUILDPATH."
 fi
 
 # Get nginx and boringssl
@@ -145,10 +145,10 @@ git clone https://boringssl.googlesource.com/boringssl $NGINXBUILDPATH/boringssl
 
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
-	cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-	git checkout release-1.19.4 || error_exit "Failed to checkout nginx release."
+        cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
+        git checkout release-1.19.4 || error_exit "Failed to checkout nginx release."
 else
-	error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
+        error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
 
 # Build boringssl
@@ -169,8 +169,8 @@ cp $NGINXBUILDPATH/boringssl/build/ssl/libssl.a $NGINXBUILDPATH/boringssl/.opens
 echo "$PROGNAME: Configure build options..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
-	cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-	./auto/configure --with-debug --with-cc-opt="-g0 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fPIC -Wdate-time -march=native -pipe -flto -funsafe-math-optimizations --param=ssp-buffer-size=4 -D_FORTIFY_SOURCE=2 -I$NGINXBUILDPATH/boringssl/.openssl/include/" --with-ld-opt="-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-z,now -fPIC -L$NGINXBUILDPATH/boringssl/.openssl/lib/" --prefix=/opt/nginx --conf-path=/opt/nginx/etc/nginx.conf --sbin-path=/opt/nginx/sbin/nginx --http-client-body-temp-path=/var/tmp/client_body_temp --lock-path=/var/lock/nginx.lock --pid-path=/run/nginx.pid --http-log-path=/var/log/nginx/access.log --error-log-path=/var/log/nginx/error.log --modules-path=/opt/nginx/lib/modules --http-fastcgi-temp-path=/opt/nginx/lib/fastcgi --http-proxy-temp-path=/opt/nginx/lib/proxy --http-scgi-temp-path=/opt/nginx/lib/scgi --http-uwsgi-temp-path=/opt/nginx/lib/uwsgi --user=www-data --group=www-data --with-pcre-jit --with-http_ssl_module --with-http_stub_status_module --with-http_realip_module --with-http_auth_request_module --with-http_v2_module --with-http_v3_module --with-http_dav_module --with-http_slice_module --with-threads --with-http_addition_module --with-http_geoip_module=dynamic --with-http_gunzip_module --with-http_gzip_static_module --with-http_image_filter_module=dynamic --with-http_sub_module --with-http_xslt_module=dynamic --with-stream=dynamic --with-stream_ssl_module --with-mail=dynamic --with-mail_ssl_module --with-openssl=$NGINXBUILDPATH/boringssl --with-openssl-opt='enable-tls1_3 enable-ec_nistp_64_gcc_128'
+        cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
+        ./auto/configure --with-debug --with-cc-opt="-g0 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fPIC -Wdate-time -march=native -pipe -flto -funsafe-math-optimizations --param=ssp-buffer-size=4 -D_FORTIFY_SOURCE=2 -I$NGINXBUILDPATH/boringssl/.openssl/include/" --with-ld-opt="-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-z,now -fPIC -L$NGINXBUILDPATH/boringssl/.openssl/lib/" --prefix=/opt/nginx --conf-path=/opt/nginx/etc/nginx.conf --sbin-path=/opt/nginx/sbin/nginx --http-client-body-temp-path=/var/tmp/client_body_temp --lock-path=/var/lock/nginx.lock --pid-path=/run/nginx.pid --http-log-path=/var/log/nginx/access.log --error-log-path=/var/log/nginx/error.log --modules-path=/opt/nginx/lib/modules --http-fastcgi-temp-path=/opt/nginx/lib/fastcgi --http-proxy-temp-path=/opt/nginx/lib/proxy --http-scgi-temp-path=/opt/nginx/lib/scgi --http-uwsgi-temp-path=/opt/nginx/lib/uwsgi --user=www-data --group=www-data --with-pcre-jit --with-http_ssl_module --with-http_stub_status_module --with-http_realip_module --with-http_auth_request_module --with-http_v2_module --with-http_dav_module --with-http_slice_module --with-threads --with-http_addition_module --with-http_geoip_module=dynamic --with-http_gunzip_module --with-http_gzip_static_module --with-http_image_filter_module=dynamic --with-http_sub_module --with-http_xslt_module=dynamic --with-stream=dynamic --with-stream_ssl_module --with-mail=dynamic --with-mail_ssl_module --with-openssl=$NGINXBUILDPATH/boringssl --with-openssl-opt='enable-tls1_3 enable-ec_nistp_64_gcc_128'
 else
         error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
@@ -185,10 +185,10 @@ sed -i -e "s/static const u_char nginx\[5\] \= \"\\\x84\\\xaa\\\x63\\\x55\\\xe7\
 echo "$PROGNAME: Make and install nginx..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
-	touch $NGINXBUILDPATH/boringssl/.openssl/include/openssl/ssl.h || error_exit "Failed to touch $NGINXBUILDPATH/boringssl/.openssl/include/openssl/ssl.h."
+        touch $NGINXBUILDPATH/boringssl/.openssl/include/openssl/ssl.h || error_exit "Failed to touch $NGINXBUILDPATH/boringssl/.openssl/include/openssl/ssl.h."
         cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-	make -j $(nproc) || error_exit "Error compiling nginx."
-	make install || error_exit "Error installing nginx."
+        make -j $(nproc) || error_exit "Error compiling nginx."
+        make install || error_exit "Error installing nginx."
 else
         error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
