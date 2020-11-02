@@ -21,10 +21,11 @@
 # Revision history:
 # 2020-11-01 Created by new_script.sh ver. 3.3
 # 2020-11-01 Use nginx 1.19.4 and boringssl
+# 2020-11-02 Updated script (https://www.shellcheck.net)
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.0.0"
+VERSION="1.0.1"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -59,7 +60,7 @@ usage() {
 }
 
 checkdeps_warn() {
-  printf >&2 "$PROGNAME: $*\n"
+  printf >&2 "%s: $*\n" "$PROGNAME"
 }
 
 checkdeps_iscmd() {
@@ -71,7 +72,7 @@ checkdeps() {
   for cmd; do
   checkdeps_iscmd "$cmd" || {
     checkdeps_warn $"$cmd not found"
-    let not_found++
+    (( not_found++ ))
   }
   done
   (( not_found == 0 )) || return 1

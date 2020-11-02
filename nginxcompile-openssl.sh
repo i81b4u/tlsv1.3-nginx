@@ -32,10 +32,11 @@
 # 2020-04-27 Use nginx 1.18.0 and openssl 1.1.1g
 # 2020-10-01 Use nginx 1.19.3 and openssl 1.1.1h
 # 2020-11-01 Use nginx 1.19.4
+# 2020-11-02 Updated script (https://www.shellcheck.net)
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.0.8"
+VERSION="1.0.9"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -70,7 +71,7 @@ usage() {
 }
 
 checkdeps_warn() {
-  printf >&2 "$PROGNAME: $*\n"
+  printf >&2 "%s: $*\n" "$PROGNAME"
 }
 
 checkdeps_iscmd() {
@@ -82,7 +83,7 @@ checkdeps() {
   for cmd; do
   checkdeps_iscmd "$cmd" || {
     checkdeps_warn $"$cmd not found"
-    let not_found++
+    (( not_found++ ))
   }
   done
   (( not_found == 0 )) || return 1
@@ -120,7 +121,7 @@ while [[ -n $1 ]]; do
   case $1 in
     -h | --help)
       help_message; graceful_exit ;;
-    -* | --*)
+    --* | -*)
       usage
       error_exit "Unknown option $1" ;;
     *)
@@ -217,7 +218,7 @@ echo "$PROGNAME: Make and install nginx..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
   cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-  make -j $(nproc) || error_exit "Error compiling nginx."
+  make -j "$(nproc)" || error_exit "Error compiling nginx."
   make install || error_exit "Error installing nginx."
 else
   error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
