@@ -197,7 +197,6 @@ fi
 echo "$PROGNAME: Cloning repositories..."
 git clone https://github.com/nginx/nginx.git $NGINXBUILDPATH/nginx || error_exit "Failed to clone nginx."
 git clone https://github.com/openssl/openssl.git $NGINXBUILDPATH/openssl || error_exit "Failed to clone openssl."
-#git clone https://github.com/google/ngx_brotli.git $NGINXBUILDPATH/ngx_brotli || error_exit "Failed to clone brotli."
 git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli $NGINXBUILDPATH/ngx_brotli || error_exit "Failed to clone brotli."
 
 if [ -d "$NGINXBUILDPATH/ngx_brotli" ]
