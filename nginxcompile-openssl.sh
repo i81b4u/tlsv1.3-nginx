@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxcompile-openssl.sh - Compile nginx 1.25.1 with openssl 3.1.2,
+# nginxcompile-openssl.sh - Compile nginx 1.25.2 with openssl 3.1.3,
 # brotli and dynamic tls records support.
 
 # By i81b4u.
@@ -68,10 +68,12 @@
 # 2023-05-31 Use openssl 3.1.1
 # 2023-08-03 Use nginx 1.25.1, openssl 3.1.2 and nginx__dynamic_tls_records_1.25.1+
 # 2023-08-04 Change http/3 server identification
+# 2023-08-15 Use nginx 1.25.2
+# 2023-09-24 Use openssl 3.1.3 and change the way ngx_brotli modules are built
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.1.0"
+VERSION="1.1.2"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -127,7 +129,7 @@ checkdeps() {
 help_message() {
   cat <<- _EOF_
   $PROGNAME ver. $VERSION
-  Compile nginx 1.25.1 with openssl 3.1.2, brotli and dynamic tls records support.
+  Compile nginx 1.25.2 with openssl 3.1.3, brotli and dynamic tls records support.
 
   $(usage)
 
@@ -195,12 +197,16 @@ fi
 echo "$PROGNAME: Cloning repositories..."
 git clone https://github.com/nginx/nginx.git $NGINXBUILDPATH/nginx || error_exit "Failed to clone nginx."
 git clone https://github.com/openssl/openssl.git $NGINXBUILDPATH/openssl || error_exit "Failed to clone openssl."
-git clone https://github.com/google/ngx_brotli.git $NGINXBUILDPATH/ngx_brotli || error_exit "Failed to clone brotli."
+#git clone https://github.com/google/ngx_brotli.git $NGINXBUILDPATH/ngx_brotli || error_exit "Failed to clone brotli."
+git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli $NGINXBUILDPATH/ngx_brotli || error_exit "Failed to clone brotli."
 
 if [ -d "$NGINXBUILDPATH/ngx_brotli" ]
 then
-  cd $NGINXBUILDPATH/ngx_brotli || error_exit "Failed to make $NGINXBUILDPATH/ngx_brotly current directory."
-  git submodule update --init || error_exit "Failed to initialize ngx_brotli submodule."
+  cd $NGINXBUILDPATH/ngx_brotli/deps/brotli || error_exit "Failed to make $NGINXBUILDPATH/ngx_brotly/deps/brotli current directory."
+  mkdir out || error_exit "Failed to create directory out in $NGINXBUILDPATH/ngx_brotly/deps/brotli."
+  cd $NGINXBUILDPATH/ngx_brotli/deps/brotli/out || error_exit "Failed to make $NGINXBUILDPATH/ngx_brotly/deps/brotli/out current directory."
+  cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed .. || error_exit "Failed to make ngx_brotli modules."
+  cmake --build . --config Release --target brotlienc || error_exit "Failed to build ngx_brotli modules."
 else
   error_exit "Directory $NGINXBUILDPATH/nginx_brotli does not exist."
 fi
@@ -208,7 +214,7 @@ fi
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
   cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-  git checkout release-1.25.1 || error_exit "Failed to checkout nginx release."
+  git checkout release-1.25.2 || error_exit "Failed to checkout nginx release."
 else
   error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
@@ -216,12 +222,12 @@ fi
 if [ -d "$NGINXBUILDPATH/openssl" ]
 then
   cd $NGINXBUILDPATH/openssl || error_exit "Failed to make $NGINXBUILDPATH/openssl current directory."
-  git checkout openssl-3.1.2 || error_exit "Failed to checkout openssl release."
+  git checkout openssl-3.1.3 || error_exit "Failed to checkout openssl release."
 else
   error_exit "Directory $NGINXBUILDPATH/openssl does not exist."
 fi
 
-# Apply http_tls_dyn_size patch for nginx >= 1.25.1
+# Apply http_tls_dyn_size patch for nginx >= 1.25.2
 echo "$PROGNAME: Patching nginx..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
@@ -248,7 +254,7 @@ sed -i -e "s/static u_char ngx_http_server_string\[\] = \"Server: nginx\" CRLF\;
 # Modify nginx http/2 server string (https://scotthelme.co.uk/customising-server-header-over-http-2-in-nginx/)
 sed -i -e "s/static const u_char nginx\[5\] \= \"\\\x84\\\xaa\\\x63\\\x55\\\xe7\"\;/static const u_char nginx\[6\] \= \"\\\x85\\\x33\\\xc1\\\x8d\\\xab\\\x7f\"\;/g" $NGINXBUILDPATH/nginx/src/http/v2/ngx_http_v2_filter_module.c || error_exit "Failed to modify http/2 nginx server string."
 # Modify nginx http/3 server string
-sed -i -e "s/\"nginx\"/\"i81b4u\"/g" $NGINXBUILDPATH/nginx/src/http/v3/ngx_http_v3_filter_module.c || error_exit "Failed to modify http/3 nginx server string." || error_exit "Failed to modify http/3 nginx server string."
+sed -i -e "s/\"nginx\"/\"i81b4u\"/g" $NGINXBUILDPATH/nginx/src/http/v3/ngx_http_v3_filter_module.c || error_exit "Failed to modify http/3 nginx server string."
 
 # Make and install
 echo "$PROGNAME: Make and install nginx..."
