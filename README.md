@@ -7,7 +7,7 @@ snippet of nginx config for openssl:
 
 	# SSL
 	ssl_dyn_rec_enable on;
-	ssl_ecdh_curve X25519:prime256v1;
+	ssl_ecdh_curve X25519:secp521r1:secp384r1:prime256v1;
 
 	# QUIC
 	http3 on;
