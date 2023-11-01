@@ -35,7 +35,7 @@ snippet of nginx config for boringssl:
 
 	# SSL
 	ssl_dyn_rec_enable on;
-	ssl_ecdh_curve X25519Kyber768Draft00:X25519:P-521:P-384;
+	ssl_ecdh_curve X25519Kyber768Draft00:X25519:P-521:P-384:P-256;
 
 	# QUIC
 	http3 on;
