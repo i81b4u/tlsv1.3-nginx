@@ -4,8 +4,6 @@ nginxcompile-openssl.sh is a script that compiles nginx 1.25.3 with openssl 3.1.
 
 snippet of nginx config for openssl:
 
-http {
-  ...
 
 	# SSL
 	ssl_dyn_rec_enable on;
@@ -28,16 +26,12 @@ http {
 	resolver 127.0.0.1 [::1] valid=60s;
 	resolver_timeout 2s;
 
-  ...
-}
 
 
 nginxcompile-boringssl.sh is a script that compiles nginx 1.25.3 with the latest version of boringssl, brotli and dynamic tls records support. This adds support for http/3 and X25519Kyber768Draft00.
 
 snippet of nginx config for boringssl:
 
-http {
-  ...
 
 	# SSL
 	ssl_dyn_rec_enable on;
@@ -52,5 +46,3 @@ http {
 	ssl_protocols TLSv1.2 TLSv1.3;
 	ssl_ciphers [ECDHE-ECDSA-CHACHA20-POLY1305|ECDHE-RSA-CHACHA20-POLY1305|ECDHE-ECDSA-AES256-GCM-SHA384|ECDHE-RSA-AES256-GCM-SHA384]:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
 
-  ...
-}
