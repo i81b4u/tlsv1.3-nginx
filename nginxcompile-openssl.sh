@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxcompile-openssl.sh - Compile nginx 1.25.2 with openssl 3.1.3,
+# nginxcompile-openssl.sh - Compile nginx 1.25.3 with openssl 3.1.4,
 # brotli and dynamic tls records support.
 
 # By i81b4u.
@@ -70,10 +70,11 @@
 # 2023-08-04 Change http/3 server identification
 # 2023-08-15 Use nginx 1.25.2
 # 2023-09-24 Use openssl 3.1.3 and change the way ngx_brotli modules are built
+# 2023-11-01 Use nginx 1.25.3 and openssl 3.1.4
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.1.2"
+VERSION="1.1.3"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -129,7 +130,7 @@ checkdeps() {
 help_message() {
   cat <<- _EOF_
   $PROGNAME ver. $VERSION
-  Compile nginx 1.25.2 with openssl 3.1.3, brotli and dynamic tls records support.
+  Compile nginx 1.25.3 with openssl 3.1.4, brotli and dynamic tls records support.
 
   $(usage)
 
@@ -213,7 +214,7 @@ fi
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
   cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-  git checkout release-1.25.2 || error_exit "Failed to checkout nginx release."
+  git checkout release-1.25.3 || error_exit "Failed to checkout nginx release."
 else
   error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
@@ -221,12 +222,12 @@ fi
 if [ -d "$NGINXBUILDPATH/openssl" ]
 then
   cd $NGINXBUILDPATH/openssl || error_exit "Failed to make $NGINXBUILDPATH/openssl current directory."
-  git checkout openssl-3.1.3 || error_exit "Failed to checkout openssl release."
+  git checkout openssl-3.1.4 || error_exit "Failed to checkout openssl release."
 else
   error_exit "Directory $NGINXBUILDPATH/openssl does not exist."
 fi
 
-# Apply http_tls_dyn_size patch for nginx >= 1.25.2
+# Apply http_tls_dyn_size patch for nginx >= 1.25.1
 echo "$PROGNAME: Patching nginx..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
