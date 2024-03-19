@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxcompile-boringssl.sh - Compile nginx with boringssl.
+# nginxquiccompile.sh - Compile nginx with boringssl.
 
 # By i81b4u.
   
@@ -15,14 +15,14 @@
 # GNU General Public License at <http://www.gnu.org/licenses/> for
 # more details.
 
-# Usage: nginxcompile-boringssl.sh [-h|--help]
+# Usage: nginxquiccompile.sh [-h|--help]
 
 # Revision history:
-# 2023-11-01 Initial release.
+# 2020-10-01 Initial release.
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.0.0"
+VERSION="1.0.2"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -120,7 +120,7 @@ done
 
 # Check dependencies (https://stackoverflow.com/questions/20815433/how-can-i-check-in-a-bash-script-if-some-software-is-installed-or-not)
 echo "$PROGNAME: Checking dependencies..."
-checkdeps go git ninja wget patch sed make || error_exit "Install dependencies before using $PROGNAME"
+checkdeps git ninja wget patch sed make || error_exit "Install dependencies before using $PROGNAME"
 
 # Create empty build environment
 echo "$PROGNAME: Cleaning up previous build..."
@@ -142,7 +142,7 @@ else
 	mkdir $NGINXBUILDPATH || error_exit "Failed to create directory $NGINXBUILDPATH."
 fi
 
-# Get nginx, boringssl and brotli
+# Get nginx and boringssl
 echo "$PROGNAME: Cloning repositories..."
 git clone https://github.com/nginx/nginx.git $NGINXBUILDPATH/nginx || error_exit "Failed to clone nginx."
 git clone https://boringssl.googlesource.com/boringssl $NGINXBUILDPATH/boringssl || error_exit "Failed to clone boringssl."
@@ -162,7 +162,7 @@ fi
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
   cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-  git checkout release-1.25.3 || error_exit "Failed to checkout nginx release."
+  git checkout release-1.25.4 || error_exit "Failed to checkout nginx release."
 else
   error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
@@ -190,7 +190,7 @@ echo "$PROGNAME: Configure build options..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
 	cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-	./auto/configure --prefix=/opt/nginx --conf-path=/opt/nginx/etc/nginx.conf --sbin-path=/opt/nginx/sbin/nginx --http-client-body-temp-path=/var/cache/nginx/client_temp --lock-path=/var/run/nginx.lock --pid-path=/var/run/nginx.pid --http-log-path=/var/log/nginx/access.log --error-log-path=/var/log/nginx/error.log --modules-path=/opt/nginx/lib/modules --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --user=www-data --group=www-data --with-compat --with-debug --add-module=$NGINXBUILDPATH/ngx_brotli --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt="-g -O2 -flto=auto -ffat-lto-objects -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC -I$NGINXBUILDPATH/boringssl/include" --with-ld-opt="-Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -flto=auto -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie -L$NGINXBUILDPATH/boringssl/build/ssl -L$NGINXBUILDPATH/boringssl/build/crypto"
+	./auto/configure --prefix=/opt/nginx --conf-path=/opt/nginx/etc/nginx.conf --sbin-path=/opt/nginx/sbin/nginx --http-client-body-temp-path=/var/cache/nginx/client_temp --lock-path=/var/run/nginx.lock --pid-path=/var/run/nginx.pid --http-log-path=/var/log/nginx/access.log --error-log-path=/var/log/nginx/error.log --modules-path=/opt/nginx/lib/modules --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --user=www-data --group=www-data --with-cc=c++ --with-compat --with-debug --add-module=$NGINXBUILDPATH/ngx_brotli --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt="-g -O2 -flto=auto -ffat-lto-objects -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC -I$NGINXBUILDPATH/boringssl/include -x c" --with-ld-opt="-Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -flto=auto -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie -L$NGINXBUILDPATH/boringssl/build/ssl -L$NGINXBUILDPATH/boringssl/build/crypto"
 else
         error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
