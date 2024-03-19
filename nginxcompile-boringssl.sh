@@ -1,6 +1,6 @@
 #!/bin/bash
 # ---------------------------------------------------------------------------
-# nginxquiccompile.sh - Compile nginx with boringssl.
+# nginxcompile-boringssl.sh - Compile nginx with boringssl.
 
 # By i81b4u.
   
@@ -15,10 +15,11 @@
 # GNU General Public License at <http://www.gnu.org/licenses/> for
 # more details.
 
-# Usage: nginxquiccompile.sh [-h|--help]
+# Usage: nginxcompile-boringssl.sh [-h|--help]
 
 # Revision history:
 # 2020-10-01 Initial release.
+# 2023-03-19 Updated so recent versions of boringssl can be used
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
