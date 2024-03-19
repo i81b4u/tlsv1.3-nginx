@@ -121,7 +121,7 @@ done
 
 # Check dependencies (https://stackoverflow.com/questions/20815433/how-can-i-check-in-a-bash-script-if-some-software-is-installed-or-not)
 echo "$PROGNAME: Checking dependencies..."
-checkdeps git ninja wget patch sed make || error_exit "Install dependencies before using $PROGNAME"
+checkdeps go git ninja wget patch sed make || error_exit "Install dependencies before using $PROGNAME"
 
 # Create empty build environment
 echo "$PROGNAME: Cleaning up previous build..."
@@ -143,7 +143,7 @@ else
 	mkdir $NGINXBUILDPATH || error_exit "Failed to create directory $NGINXBUILDPATH."
 fi
 
-# Get nginx and boringssl
+# Get nginx, boringssl and brotli
 echo "$PROGNAME: Cloning repositories..."
 git clone https://github.com/nginx/nginx.git $NGINXBUILDPATH/nginx || error_exit "Failed to clone nginx."
 git clone https://boringssl.googlesource.com/boringssl $NGINXBUILDPATH/boringssl || error_exit "Failed to clone boringssl."
