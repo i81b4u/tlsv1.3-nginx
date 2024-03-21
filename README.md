@@ -1,6 +1,6 @@
 # tlsv1.3-nginx
 
-nginxcompile-openssl.sh is a script that compiles nginx 1.25.4 with openssl 3.1.4, brotli and dynamic tls records support. Updated to support http/3.
+nginxcompile-openssl.sh is a script that compiles nginx 1.25.4 with openssl 3.2.1, brotli and dynamic tls records support. Updated to support http/3.
 
 snippet of nginx config for openssl:
 
