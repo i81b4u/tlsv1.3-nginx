@@ -23,7 +23,7 @@
 # ---------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="1.0.2"
+VERSION="1.0.3"
 NGINXBUILDPATH="/usr/src"
 
 clean_up() { # Perform pre-exit housekeeping
@@ -163,7 +163,7 @@ fi
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
   cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-  git checkout release-1.25.4 || error_exit "Failed to checkout nginx release."
+  git checkout release-1.27.3 || error_exit "Failed to checkout nginx release."
 else
   error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
@@ -180,8 +180,8 @@ echo "$PROGNAME: Patching nginx..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
   cd $NGINXBUILDPATH/nginx || error_exit "Failed to make $NGINXBUILDPATH/nginx current directory."
-  wget https://raw.githubusercontent.com/nginx-modules/ngx_http_tls_dyn_size/master/nginx__dynamic_tls_records_1.25.1%2B.patch || error_exit "Failed to retrieve dynamic tls records patch."
-  patch -p1 < nginx__dynamic_tls_records_1.25.1+.patch || error_exit "Could not apply dynamic tls records patch."
+  wget https://raw.githubusercontent.com/nginx-modules/ngx_http_tls_dyn_size/master/nginx__dynamic_tls_records_1.27.2%2B.patch || error_exit "Failed to retrieve dynamic tls records patch."
+  patch -p1 < nginx__dynamic_tls_records_1.27.2+.patch || error_exit "Could not apply dynamic tls records patch."
 else
   error_exit "Directory $NGINXBUILDPATH/nginx does not exist."
 fi
