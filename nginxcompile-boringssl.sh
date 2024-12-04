@@ -175,7 +175,7 @@ cd $NGINXBUILDPATH/boringssl/build || error_exit "Failed to make $NGINXBUILDPATH
 cmake -GNinja .. || error_exit "Failed to cmake boringssl."
 ninja || error_exit "Faied to compile boringssl."
 
-# Apply http_tls_dyn_size patch for nginx >= 1.25.1
+# Apply http_tls_dyn_size patch for nginx >= 1.27.2
 echo "$PROGNAME: Patching nginx..."
 if [ -d "$NGINXBUILDPATH/nginx" ]
 then
