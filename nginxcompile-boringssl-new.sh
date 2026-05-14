@@ -17,15 +17,15 @@ IFS=$'\n\t'
 ###############################################################################
 
 PROGNAME="$(basename "$0")"
-VERSION="2.0.0"
+VERSION="2.0.1"
 
 ###############################################################################
 # Configuration
 ###############################################################################
 
 # Versions
-NGINX_COMMIT="release-1.29.5"
-BORINGSSL_COMMIT="0.20251124.0"
+NGINX_COMMIT="release-1.31.0"
+BORINGSSL_COMMIT="0.20260508.0"
 NGX_BROTLI_COMMIT="master"
 
 PREFIX="/opt/nginx"
@@ -214,6 +214,9 @@ log "Configuring nginx"
 ###############################################################################
 
 log "Customizing server headers"
+
+sed -i -e "s/static const u_char nginx\[5\] = { 0x84, 0xaa, 0x63, 0x55, 0xe7 };/static const u_char nginx\[6\] = { 0x85, 0x33, 0xc1, 0x8d, 0xab, 0x7f };/g" \
+  src/http/v2/ngx_http_v2_filter_module.c
 
 sed -i 's/Server: nginx/Server: i81b4u/' \
   src/http/ngx_http_header_filter_module.c
