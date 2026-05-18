@@ -5,27 +5,25 @@ nginxcompile-openssl.sh is a script that compiles nginx 1.27.3 with openssl 3.2.
 snippet of nginx config for openssl:
 
 
-	# SSL
-	ssl_dyn_rec_enable on;
-	ssl_ecdh_curve X25519:secp521r1:secp384r1:prime256v1;
-
 	# QUIC
 	http3 on;
 	quic_retry on;
+    quic_gso on;
 
-	# modern configuration
+	# SSL
 	ssl_prefer_server_ciphers on;
 	ssl_protocols TLSv1.2 TLSv1.3;
 	ssl_ciphers ECDHE+AESGCM;
 	ssl_conf_command Options PrioritizeChaCha;
 	ssl_conf_command Options KTLS;
-
-	# OCSP Stapling
-	ssl_stapling on;
-	ssl_stapling_verify on;
-	resolver 127.0.0.1 [::1] valid=60s;
-	resolver_timeout 2s;
-
+	ssl_session_timeout 1d;
+	ssl_session_cache shared:SSL:10m;
+	ssl_session_tickets off;
+	ssl_dyn_rec_enable on;
+	ssl_certificate_compression on;
+	ssl_ecdh_curve MLKEM1024:SecP256r1MLKEM768:X25519MLKEM768:SecP384r1MLKEM1024:curveSM2MLKEM768:X25519:P-384:P-256;
+	ssl_conf_command SignatureAlgorithms ecdsa_secp384r1_sha384:ecdsa_secp256r1_sha256:ed25519:ed448:rsa_pss_rsae_sha384:rsa_pss_rsae_sha256:rsa_pss_pss_sha384:rsa_pss_pss_sha256:rsa_pkcs1_sha384:rsa_pkcs1_sha256:mldsa65:mldsa87;
+	ssl_buffer_size 4k;
 
 
 nginxcompile-boringssl.sh is a script that compiles nginx 1.27.3 with the latest version of boringssl, brotli and dynamic tls records support. This adds support for http/3 and X25519MLKEM768.
@@ -33,16 +31,14 @@ nginxcompile-boringssl.sh is a script that compiles nginx 1.27.3 with the latest
 snippet of nginx config for boringssl:
 
 
-	# SSL
-	ssl_dyn_rec_enable on;
-	ssl_ecdh_curve MLKEM1024:X25519MLKEM768:X25519:P-384:P-256;
-
 	# QUIC
 	http3 on;
 	quic_retry on;
 
-	# modern configuration
+	# SSL
 	ssl_prefer_server_ciphers on;
 	ssl_protocols TLSv1.2 TLSv1.3;
 	ssl_ciphers [ECDHE-ECDSA-AES256-GCM-SHA384|ECDHE-RSA-AES256-GCM-SHA384]:[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-RSA-AES128-GCM-SHA256];
+	ssl_dyn_rec_enable on;
+	ssl_ecdh_curve MLKEM1024:X25519MLKEM768:X25519:P-384:P-256;
 
