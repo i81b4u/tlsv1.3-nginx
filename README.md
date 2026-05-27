@@ -1,6 +1,46 @@
 # tlsv1.3-nginx
 
-snippet of nginx config for openssl:
+This is a new version of the scripts I use to compile nginx with either boringssl or openssl.
+Because a lot of the logic used in my previous scripts was the same, I decided to do a rewrite
+to merge most logic and add some features. Another big advantage is that root rights are not
+needed anymore, except for installing and testing the build.<br/><br/>
+To clone the repository, just type:
+```
+git clone https://github.com/i81b4u/tlsv1.3-nginx.git
+```
+<br/>
+After that, enter the directory and execute either
+
+```
+./nginxcompile-boringssl.sh --help
+```
+or
+```
+./nginxcompile-openssl.sh --help
+```
+
+to see what the options are.<br/><br/>
+To further facilitate testing, "pre-cloning" used repositories is supported to skip having
+to download them every time. This is done by entering the same directory the scripts
+live in and typing something like:
+
+```
+git clone https://github.com/nginx/nginx.git
+git clone https://github.com/google/boringssl.git
+git clone --recurse-submodules https://github.com/google/ngx_brotli.git
+git clone https://github.com/openssl/openssl.git
+```
+<br/>
+When building the first time the standard configtest can be omitted by issuing a command like:
+
+```
+./nginxcompile-openssl.sh --release --no-config-test
+```
+<br/><br/>
+By building like this, you can enable PQC-related features provided by boringssl or openssl.
+Examples on how to configure are listed below:
+
+**snippet of nginx config for openssl**
 
 
 	# QUIC
@@ -24,7 +64,7 @@ snippet of nginx config for openssl:
 	ssl_buffer_size 4k;
 
 
-snippet of nginx config for boringssl:
+**snippet of nginx config for boringssl**
 
 
 	# QUIC
@@ -38,3 +78,4 @@ snippet of nginx config for boringssl:
 	ssl_dyn_rec_enable on;
 	ssl_ecdh_curve MLKEM1024:X25519MLKEM768:X25519:P-384:P-256;
 
+**Enjoy!**
