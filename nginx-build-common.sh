@@ -1,28 +1,43 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# Shared nginx build workflow
+# -----------------------------------------------------------------------------
+#
+# This file is sourced by nginxcompile-openssl.sh and
+# nginxcompile-boringssl.sh. The wrapper script sets the TLS backend, version
+# pins, and backend-specific functions; this file handles the common nginx,
+# Brotli, install, verification, and permissions workflow.
 
 set -Eeuo pipefail
 IFS=$'\n\t'
 
+# The wrapper must define these values before sourcing this file.
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set before sourcing nginx-build-common.sh}"
 : "${TLS_BACKEND:?TLS_BACKEND must be set before sourcing nginx-build-common.sh}"
 : "${NGINX_COMMIT:?NGINX_COMMIT must be set before sourcing nginx-build-common.sh}"
 : "${NGX_BROTLI_COMMIT:?NGX_BROTLI_COMMIT must be set before sourcing nginx-build-common.sh}"
 
 PROGNAME="$(basename "$0")"
-VERSION="3.0.0"
+VERSION="3.0.1"
 
+# Default build locations. Every value can be overridden from the environment
+# or, for the common paths, by command-line options.
 PREFIX="${PREFIX:-/opt/nginx}"
 SOURCE_ROOT="${SOURCE_ROOT:-$SCRIPT_DIR}"
 BUILD_ROOT="${BUILD_ROOT:-${TMPDIR:-/tmp}/nginx-build-$TLS_BACKEND}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs/$TLS_BACKEND-$(date +%Y%m%d-%H%M%S)}"
 JOBS="${JOBS:-$(nproc)}"
 RUNTIME_ROOT="${RUNTIME_ROOT:-}"
+NGINX_INSTALL_OWNER="${NGINX_INSTALL_OWNER:-www-data}"
+NGINX_INSTALL_GROUP="${NGINX_INSTALL_GROUP:-root}"
 
+# Runtime switches controlled by command-line options.
 KEEP_BUILD=0
 INSTALL_NGINX=1
 APPLY_BRANDING=1
 DEBUG_BUILD=1
 CONFIG_TEST=1
+FIX_PERMISSIONS=1
 
 PATCH_DIR="$SCRIPT_DIR/patches"
 DYNAMIC_TLS_PATCH="$PATCH_DIR/nginx-dynamic-tls-records-1.29.2-plus.patch"
@@ -37,6 +52,7 @@ die() {
   exit 1
 }
 
+# Print the options supported by both TLS backend wrappers.
 usage() {
   cat <<EOF
 $PROGNAME $VERSION
@@ -54,6 +70,8 @@ Options:
   --no-install       Build only; do not run make install
   --no-branding      Do not apply the i81b4u server-header patch
   --no-config-test   Skip nginx -t after install
+  --no-fix-permissions
+                     Skip post-install nginx ownership and permissions setup
   --debug            Include --with-debug. Default
   --release          Omit --with-debug
   -h, --help         Show this help text
@@ -127,6 +145,10 @@ parse_args() {
         CONFIG_TEST=0
         shift
         ;;
+      --no-fix-permissions)
+        FIX_PERMISSIONS=0
+        shift
+        ;;
       --debug)
         DEBUG_BUILD=1
         shift
@@ -146,6 +168,7 @@ parse_args() {
   done
 }
 
+# Fail early when a required external tool is missing.
 require_cmds() {
   local missing=()
   for cmd in "$@"; do
@@ -154,6 +177,8 @@ require_cmds() {
   [[ ${#missing[@]} -eq 0 ]] || die "Missing dependencies: ${missing[*]}"
 }
 
+# Run a command as root. This lets normal users build while still installing
+# into system-owned locations such as /opt and /var.
 as_root() {
   if [[ "$(id -u)" -eq 0 ]]; then
     "$@"
@@ -164,6 +189,8 @@ as_root() {
   fi
 }
 
+# Run a command while streaming output to the terminal and saving the same
+# output to a named log file under LOG_DIR.
 run_logged() {
   local name="$1"
   shift
@@ -173,6 +200,8 @@ run_logged() {
   "$@" 2>&1 | tee "$LOG_DIR/$name.log"
 }
 
+# Remove the temporary build tree after successful builds. Failed builds and
+# --keep-build keep the tree in place for inspection.
 cleanup() {
   local status=$?
 
@@ -187,6 +216,9 @@ cleanup() {
   log "Logs are in: $LOG_DIR"
 }
 
+# Clone a pinned source tree into the temporary build root. If a local mirror
+# exists under SOURCE_ROOT, clone from that mirror to avoid unnecessary network
+# traffic and to preserve the user's checked-out source cache.
 clone_source() {
   local name="$1"
   local url="$2"
@@ -202,9 +234,12 @@ clone_source() {
     git clone --recurse-submodules "$url" "$BUILD_ROOT/$name"
   fi
 
+  # Checkout the exact commit so repeated builds use the same source revisions.
   cd "$BUILD_ROOT/$name"
   git checkout "$commit"
 
+  # If ngx_brotli was cloned locally with its Brotli dependency present, point
+  # the submodule at that local copy too.
   if [[ -e "$local_source/deps/brotli/.git" ]]; then
     git submodule set-url deps/brotli "$local_source/deps/brotli"
   fi
@@ -216,6 +251,7 @@ clone_source() {
   cd "$BUILD_ROOT"
 }
 
+# Apply a repository patch from the patches directory.
 apply_patch_file() {
   local label="$1"
   local patch_file="$2"
@@ -226,6 +262,7 @@ apply_patch_file() {
   patch -p1 < "$patch_file"
 }
 
+# Start every build from a clean temporary directory.
 prepare_build_root() {
   [[ "$BUILD_ROOT" == / ]] && die "Refusing to use / as build root"
 
@@ -234,6 +271,9 @@ prepare_build_root() {
   cd "$BUILD_ROOT"
 }
 
+# Resolve nginx runtime paths. By default the installed nginx uses the usual
+# /var paths. --runtime-root moves those paths under one alternate directory,
+# which is useful for test installs or non-system deployments.
 set_runtime_paths() {
   if [[ -n "$RUNTIME_ROOT" ]]; then
     LOCK_PATH="$RUNTIME_ROOT/run/nginx.lock"
@@ -258,11 +298,14 @@ set_runtime_paths() {
   fi
 }
 
+# Fetch the source trees that are common to both OpenSSL and BoringSSL builds.
 fetch_sources() {
   clone_source nginx https://github.com/nginx/nginx.git "$NGINX_COMMIT" 0
   clone_source ngx_brotli https://github.com/google/ngx_brotli.git "$NGX_BROTLI_COMMIT" 1
 }
 
+# Build the Brotli encoder library used by ngx_brotli. The nginx configure step
+# later adds ngx_brotli as a static module.
 build_brotli() {
   log "Building Brotli"
   cd "$BUILD_ROOT/ngx_brotli/deps/brotli"
@@ -280,6 +323,8 @@ build_brotli() {
     cmake --build . --target brotlienc -- -j"$JOBS"
 }
 
+# Apply local nginx patches before configure. Branding is optional so users can
+# keep the stock nginx server header if desired.
 patch_nginx() {
   cd "$BUILD_ROOT/nginx"
   apply_patch_file "nginx dynamic TLS records patch" "$DYNAMIC_TLS_PATCH"
@@ -289,6 +334,8 @@ patch_nginx() {
   fi
 }
 
+# Configure arguments shared by both TLS backends. Backend-specific scripts add
+# their TLS compiler/linker flags through add_tls_configure_args().
 base_configure_args() {
   CONFIGURE_ARGS=(
     --prefix="$PREFIX"
@@ -339,6 +386,8 @@ base_configure_args() {
   fi
 }
 
+# Generate nginx makefiles with the shared options plus the selected TLS backend
+# options supplied by the wrapper script.
 configure_nginx() {
   cd "$BUILD_ROOT/nginx"
   base_configure_args
@@ -347,11 +396,14 @@ configure_nginx() {
   run_logged nginx-configure ./auto/configure "${CONFIGURE_ARGS[@]}"
 }
 
+# Compile nginx using the configured parallel job count.
 build_nginx() {
   cd "$BUILD_ROOT/nginx"
   run_logged nginx-build make -j"$JOBS"
 }
 
+# Install nginx. System prefixes usually need sudo; user-writable prefixes do
+# not.
 install_nginx() {
   [[ "$INSTALL_NGINX" -eq 1 ]] || return
 
@@ -364,6 +416,9 @@ install_nginx() {
   fi
 }
 
+# Create directories referenced by the nginx configure arguments before running
+# nginx -t. This prevents config verification from failing on missing log,
+# pid, lock, or cache directories.
 ensure_runtime_dirs() {
   [[ "$INSTALL_NGINX" -eq 1 ]] || return
 
@@ -393,16 +448,83 @@ ensure_runtime_dirs() {
   done
 }
 
-verify_nginx() {
-  [[ "$INSTALL_NGINX" -eq 1 ]] || return
+# Apply the local ownership and permission policy after nginx has been verified.
+# This intentionally runs after nginx -V and nginx -t because strict 750/640
+# permissions can prevent the invoking user from executing the installed binary.
+fix_nginx_permissions() {
+  [[ "$INSTALL_NGINX" -eq 1 && "$FIX_PERMISSIONS" -eq 1 ]] || return
 
-  run_logged nginx-version "$PREFIX/sbin/nginx" -V
+  local install_owner_group="$NGINX_INSTALL_OWNER:$NGINX_INSTALL_GROUP"
+  local log_dirs=()
+  local log_dir
 
-  if [[ "$CONFIG_TEST" -eq 1 ]]; then
-    run_logged nginx-config-test "$PREFIX/sbin/nginx" -t
+  as_root test -d "$PREFIX" || die "Install prefix not found: $PREFIX"
+  as_root test -f "$PREFIX/sbin/nginx" || die "nginx executable not found: $PREFIX/sbin/nginx"
+
+  log "Creating nginx configuration and SSL directories"
+  as_root mkdir -p \
+    "$PREFIX/etc/ssl/certs" \
+    "$PREFIX/etc/ssl/keys" \
+    "$PREFIX/etc/include/sites" \
+    "$PREFIX/etc/include/conf" \
+    "$CLIENT_BODY_TEMP_PATH"
+
+  log "Setting ownership and permissions under $PREFIX"
+  as_root find "$PREFIX" -type d -exec chmod 750 {} +
+  as_root find "$PREFIX" -type d -exec chown "$install_owner_group" {} +
+  as_root find "$PREFIX" -type f -exec chmod 640 {} +
+  as_root find "$PREFIX" -type f -exec chown "$install_owner_group" {} +
+
+  log "Making nginx binary executable"
+  as_root chmod 750 "$PREFIX/sbin/nginx"
+
+  log "Restricting nginx private key permissions"
+  as_root find "$PREFIX/etc/ssl/keys" -name '*.key' -type f -exec chmod 440 {} +
+
+  # Access and error logs often live in the same directory; only process each
+  # directory once to avoid duplicate log messages and duplicate find runs.
+  for log_dir in "$(dirname "$HTTP_LOG_PATH")" "$(dirname "$ERROR_LOG_PATH")"; do
+    [[ " ${log_dirs[*]} " == *" $log_dir "* ]] || log_dirs+=("$log_dir")
+  done
+
+  for log_dir in "${log_dirs[@]}"; do
+    as_root test -d "$log_dir" || die "nginx log directory not found: $log_dir"
+
+    log "Setting ownership and permissions under $log_dir"
+    as_root chmod 750 "$log_dir"
+    as_root chown "$install_owner_group" "$log_dir"
+    as_root find "$log_dir" -type f -exec chmod 640 {} +
+    as_root find "$log_dir" -type f -exec chown "$install_owner_group" {} +
+  done
+}
+
+# Run the installed nginx directly when possible, otherwise use sudo. This is
+# needed when an existing strict /opt/nginx tree prevents the build user from
+# traversing the install prefix.
+run_installed_nginx_logged() {
+  local name="$1"
+  shift
+
+  if [[ -x "$PREFIX/sbin/nginx" ]]; then
+    run_logged "$name" "$PREFIX/sbin/nginx" "$@"
+  else
+    run_logged "$name" as_root "$PREFIX/sbin/nginx" "$@"
   fi
 }
 
+# Record nginx build information and test the installed configuration.
+verify_nginx() {
+  [[ "$INSTALL_NGINX" -eq 1 ]] || return
+
+  run_installed_nginx_logged nginx-version -V
+
+  if [[ "$CONFIG_TEST" -eq 1 ]]; then
+    run_installed_nginx_logged nginx-config-test -t
+  fi
+}
+
+# Main build pipeline. The TLS wrapper supplies require_tls_cmds,
+# fetch_tls_source, build_tls, and add_tls_configure_args.
 main() {
   parse_args "$@"
   trap cleanup EXIT
@@ -427,6 +549,7 @@ main() {
   install_nginx
   ensure_runtime_dirs
   verify_nginx
+  fix_nginx_permissions
 
   log "Build completed successfully"
 }
