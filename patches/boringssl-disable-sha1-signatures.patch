@@ -1,0 +1,32 @@
+diff --git a/ssl/extensions.cc b/ssl/extensions.cc
+--- a/ssl/extensions.cc
++++ b/ssl/extensions.cc
+@@ -303,7 +303,7 @@ static const uint16_t kVerifySignatureAlgorithms[] = {
+     SSL_SIGN_RSA_PKCS1_SHA512,
+ 
+     // For now, SHA-1 is still accepted but least preferable.
+-    SSL_SIGN_RSA_PKCS1_SHA1,
++    // SSL_SIGN_RSA_PKCS1_SHA1,
+ };
+ 
+ // kSignSignatureAlgorithms is the default list of supported signature
+@@ -332,8 +332,8 @@ static const uint16_t kSignSignatureAlgorithms[] = {
+     SSL_SIGN_RSA_PKCS1_SHA512,
+ 
+     // If the peer supports nothing else, sign with SHA-1.
+-    SSL_SIGN_ECDSA_SHA1,
+-    SSL_SIGN_RSA_PKCS1_SHA1,
++    // SSL_SIGN_ECDSA_SHA1,
++    // SSL_SIGN_RSA_PKCS1_SHA1,
+ };
+ 
+ static Span<const uint16_t> tls12_get_verify_sigalgs(const SSL_HANDSHAKE *hs) {
+@@ -5131,7 +5131,7 @@ bool tls1_choose_signature_algorithm(SSL_HANDSHAKE *hs,
+       // If the client didn't specify any signature_algorithms extension, it is
+       // interpreted as SHA-1. See
+       // http://tools.ietf.org/html/rfc5246#section-7.4.1.4.1
+-      static const uint16_t kTLS12Default[] = {SSL_SIGN_RSA_PKCS1_SHA1,
++      static const uint16_t kTLS12Default[] = {// SSL_SIGN_RSA_PKCS1_SHA1,
+                                                SSL_SIGN_ECDSA_SHA1};
+       peer_sigalgs = kTLS12Default;
+     }
