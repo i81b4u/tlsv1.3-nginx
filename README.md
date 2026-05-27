@@ -40,7 +40,7 @@ When building the first time the standard configtest can be omitted by issuing a
 By building like this, you can enable PQC-related features provided by boringssl or openssl.
 Examples on how to configure are listed below:
 
-**snippet of nginx config for openssl**
+**Snippet of nginx config for openssl**
 
 
 	# QUIC
@@ -64,7 +64,7 @@ Examples on how to configure are listed below:
 	ssl_buffer_size 4k;
 
 
-**snippet of nginx config for boringssl**
+**Snippet of nginx config for boringssl**
 
 
 	# QUIC
@@ -77,5 +77,6 @@ Examples on how to configure are listed below:
 	ssl_ciphers [ECDHE-ECDSA-AES256-GCM-SHA384|ECDHE-RSA-AES256-GCM-SHA384]:[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-RSA-AES128-GCM-SHA256];
 	ssl_dyn_rec_enable on;
 	ssl_ecdh_curve MLKEM1024:X25519MLKEM768:X25519:P-384:P-256;
+<br/>
 
-**Enjoy!**
+**This repository was developed with assistance from OpenAI Codex for scripting, review, and troubleshooting.**
