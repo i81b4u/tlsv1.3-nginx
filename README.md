@@ -1,7 +1,5 @@
 # tlsv1.3-nginx
 
-nginxcompile-openssl.sh is a script that compiles nginx 1.27.3 with openssl 3.2.1, brotli and dynamic tls records support. Updated to support http/3.
-
 snippet of nginx config for openssl:
 
 
@@ -25,8 +23,6 @@ snippet of nginx config for openssl:
 	ssl_conf_command SignatureAlgorithms ecdsa_secp384r1_sha384:ecdsa_secp256r1_sha256:ed25519:ed448:rsa_pss_rsae_sha384:rsa_pss_rsae_sha256:rsa_pss_pss_sha384:rsa_pss_pss_sha256:rsa_pkcs1_sha384:rsa_pkcs1_sha256:mldsa65:mldsa87;
 	ssl_buffer_size 4k;
 
-
-nginxcompile-boringssl.sh is a script that compiles nginx 1.27.3 with the latest version of boringssl, brotli and dynamic tls records support. This adds support for http/3 and X25519MLKEM768.
 
 snippet of nginx config for boringssl:
 
