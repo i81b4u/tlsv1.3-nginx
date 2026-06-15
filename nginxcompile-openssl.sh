@@ -16,26 +16,19 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 TLS_BACKEND="openssl"
 
-# Version pins:
-# - These are immutable commit hashes so repeated builds use the same sources.
-# - The comments describe the human-readable version or branch intent.
-# - To update a pin, checkout the intended tag or branch in the local repo,
-#   verify the build, then record the exact commit with:
-#
-#     git -C nginx rev-parse HEAD
-#     git -C openssl rev-parse HEAD
-#     git -C ngx_brotli rev-parse HEAD
-#
-# - Update both the comment and the hash together.
+# Source refs:
+# - These can be tag names, branch names, or commit hashes.
+# - Tags and commit hashes are stable. Branch names follow the branch state
+#   available from the cloned remote or local source mirror.
 
-# nginx 1.31.1 mainline snapshot
-NGINX_COMMIT="d44205284fa41662da803b796d6056fc1e59b1f3"
+# nginx 1.31.1 release
+NGINX_REF="release-1.31.1"
 
-# OpenSSL 4.0.0 from the OpenSSL development branch
-OPENSSL_COMMIT="11b7b6ea3b65a584e1d31408ed1bdb139465cffd"
+# OpenSSL 4.0.1 release
+OPENSSL_REF="openssl-4.0.1"
 
-# ngx_brotli snapshot compatible with this nginx build
-NGX_BROTLI_COMMIT="a71f9312c2deb28875acc7bacfdd5695a111aa53"
+# ngx_brotli branch compatible with this nginx build
+NGX_BROTLI_REF="master"
 
 # OpenSSL is built by nginx itself through --with-openssl, so there are no
 # extra backend tools to require beyond the common build dependencies.
@@ -44,9 +37,9 @@ require_tls_cmds() {
 }
 
 # Fetch the OpenSSL source tree that nginx will compile as part of its own
-# build. Keeping this as a pinned checkout makes the final binary reproducible.
+# build.
 fetch_tls_source() {
-  clone_source openssl https://github.com/openssl/openssl.git "$OPENSSL_COMMIT" 0
+  clone_source openssl https://github.com/openssl/openssl.git "$OPENSSL_REF" 0
 }
 
 # No separate OpenSSL build step is needed here; nginx drives it during make.
@@ -54,7 +47,7 @@ build_tls() {
   :
 }
 
-# Add the nginx configure options that select the pinned OpenSSL tree and enable
+# Add the nginx configure options that select the OpenSSL tree and enable
 # the OpenSSL features expected by this build.
 add_tls_configure_args() {
   CONFIGURE_ARGS+=(
