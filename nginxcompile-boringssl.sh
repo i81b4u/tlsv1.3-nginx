@@ -16,26 +16,19 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 TLS_BACKEND="boringssl"
 
-# Version pins:
-# - These are immutable commit hashes so repeated builds use the same sources.
-# - The comments describe the human-readable version or branch intent.
-# - To update a pin, checkout the intended tag or branch in the local repo,
-#   verify the build, then record the exact commit with:
-#
-#     git -C nginx rev-parse HEAD
-#     git -C boringssl rev-parse HEAD
-#     git -C ngx_brotli rev-parse HEAD
-#
-# - Update both the comment and the hash together.
+# Source refs:
+# - These can be tag names, branch names, or commit hashes.
+# - Tags and commit hashes are stable. Branch names follow the branch state
+#   available from the cloned remote or local source mirror.
 
-# nginx 1.31.1 mainline snapshot
-NGINX_COMMIT="d44205284fa41662da803b796d6056fc1e59b1f3"
+# nginx 1.31.1 release
+NGINX_REF="release-1.31.1"
 
-# BoringSSL 0.20260508.0 snapshot
-BORINGSSL_COMMIT="d589045a772678d5ca131f4c8087d001b9258380"
+# BoringSSL 0.20260526.0 snapshot
+BORINGSSL_REF="0.20260526.0"
 
-# ngx_brotli snapshot compatible with this nginx build
-NGX_BROTLI_COMMIT="a71f9312c2deb28875acc7bacfdd5695a111aa53"
+# ngx_brotli branch compatible with this nginx build
+NGX_BROTLI_REF="master"
 
 BORINGSSL_SHA1_PATCH="$SCRIPT_DIR/patches/boringssl-disable-sha1-signatures.patch"
 
@@ -44,9 +37,9 @@ require_tls_cmds() {
   require_cmds ninja
 }
 
-# Fetch the pinned BoringSSL source tree used for this build.
+# Fetch the selected BoringSSL source tree used for this build.
 fetch_tls_source() {
-  clone_source boringssl https://github.com/google/boringssl.git "$BORINGSSL_COMMIT" 0
+  clone_source boringssl https://github.com/google/boringssl.git "$BORINGSSL_REF" 0
 }
 
 # Build BoringSSL's crypto and ssl libraries, then nginx links against them
