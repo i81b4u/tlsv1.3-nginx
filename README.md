@@ -30,6 +30,9 @@ git clone https://github.com/google/boringssl.git
 git clone --recurse-submodules https://github.com/google/ngx_brotli.git
 git clone https://github.com/openssl/openssl.git
 ```
+The scripts select source versions by Git ref names in the wrapper scripts. These refs can
+be tags, branches, or commit hashes. When local pre-cloned repositories are used, make sure
+they have the selected tags or branches fetched before building.
 <br/>
 When building the first time the standard configtest can be omitted by issuing a command like:
 
