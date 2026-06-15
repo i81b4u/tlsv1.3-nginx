@@ -5,7 +5,7 @@
 #
 # This file is sourced by nginxcompile-openssl.sh and
 # nginxcompile-boringssl.sh. The wrapper script sets the TLS backend, version
-# pins, and backend-specific functions; this file handles the common nginx,
+# refs, and backend-specific functions; this file handles the common nginx,
 # Brotli, install, verification, and permissions workflow.
 
 set -Eeuo pipefail
@@ -14,8 +14,8 @@ IFS=$'\n\t'
 # The wrapper must define these values before sourcing this file.
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set before sourcing nginx-build-common.sh}"
 : "${TLS_BACKEND:?TLS_BACKEND must be set before sourcing nginx-build-common.sh}"
-: "${NGINX_COMMIT:?NGINX_COMMIT must be set before sourcing nginx-build-common.sh}"
-: "${NGX_BROTLI_COMMIT:?NGX_BROTLI_COMMIT must be set before sourcing nginx-build-common.sh}"
+: "${NGINX_REF:?NGINX_REF must be set before sourcing nginx-build-common.sh}"
+: "${NGX_BROTLI_REF:?NGX_BROTLI_REF must be set before sourcing nginx-build-common.sh}"
 
 PROGNAME="$(basename "$0")"
 VERSION="3.0.1"
@@ -216,17 +216,36 @@ cleanup() {
   log "Logs are in: $LOG_DIR"
 }
 
-# Clone a pinned source tree into the temporary build root. If a local mirror
+# Check out a Git ref. Tags and commit hashes are checked out directly. Branch
+# names that only exist on origin are checked out as local branches.
+checkout_ref() {
+  local name="$1"
+  local ref="$2"
+
+  if git rev-parse --verify --quiet "$ref^{commit}" >/dev/null; then
+    git checkout "$ref"
+    return
+  fi
+
+  if git show-ref --verify --quiet "refs/remotes/origin/$ref"; then
+    git checkout -B "$ref" "origin/$ref"
+    return
+  fi
+
+  die "Unable to check out $name ref: $ref"
+}
+
+# Clone a selected source tree into the temporary build root. If a local mirror
 # exists under SOURCE_ROOT, clone from that mirror to avoid unnecessary network
 # traffic and to preserve the user's checked-out source cache.
 clone_source() {
   local name="$1"
   local url="$2"
-  local commit="$3"
+  local ref="$3"
   local update_submodules="${4:-0}"
   local local_source="$SOURCE_ROOT/$name"
 
-  log "Cloning $name"
+  log "Cloning $name at $ref"
 
   if [[ -d "$local_source/.git" ]]; then
     git clone "$local_source" "$BUILD_ROOT/$name"
@@ -234,9 +253,8 @@ clone_source() {
     git clone --recurse-submodules "$url" "$BUILD_ROOT/$name"
   fi
 
-  # Checkout the exact commit so repeated builds use the same source revisions.
   cd "$BUILD_ROOT/$name"
-  git checkout "$commit"
+  checkout_ref "$name" "$ref"
 
   # If ngx_brotli was cloned locally with its Brotli dependency present, point
   # the submodule at that local copy too.
@@ -300,8 +318,8 @@ set_runtime_paths() {
 
 # Fetch the source trees that are common to both OpenSSL and BoringSSL builds.
 fetch_sources() {
-  clone_source nginx https://github.com/nginx/nginx.git "$NGINX_COMMIT" 0
-  clone_source ngx_brotli https://github.com/google/ngx_brotli.git "$NGX_BROTLI_COMMIT" 1
+  clone_source nginx https://github.com/nginx/nginx.git "$NGINX_REF" 0
+  clone_source ngx_brotli https://github.com/google/ngx_brotli.git "$NGX_BROTLI_REF" 1
 }
 
 # Build the Brotli encoder library used by ngx_brotli. The nginx configure step
@@ -405,7 +423,7 @@ build_nginx() {
 # Install nginx. System prefixes usually need sudo; user-writable prefixes do
 # not.
 install_nginx() {
-  [[ "$INSTALL_NGINX" -eq 1 ]] || return
+  [[ "$INSTALL_NGINX" -eq 1 ]] || return 0
 
   cd "$BUILD_ROOT/nginx"
 
@@ -420,7 +438,7 @@ install_nginx() {
 # nginx -t. This prevents config verification from failing on missing log,
 # pid, lock, or cache directories.
 ensure_runtime_dirs() {
-  [[ "$INSTALL_NGINX" -eq 1 ]] || return
+  [[ "$INSTALL_NGINX" -eq 1 ]] || return 0
 
   local dirs=(
     "$(dirname "$LOCK_PATH")"
@@ -452,7 +470,7 @@ ensure_runtime_dirs() {
 # This intentionally runs after nginx -V and nginx -t because strict 750/640
 # permissions can prevent the invoking user from executing the installed binary.
 fix_nginx_permissions() {
-  [[ "$INSTALL_NGINX" -eq 1 && "$FIX_PERMISSIONS" -eq 1 ]] || return
+  [[ "$INSTALL_NGINX" -eq 1 && "$FIX_PERMISSIONS" -eq 1 ]] || return 0
 
   local install_owner_group="$NGINX_INSTALL_OWNER:$NGINX_INSTALL_GROUP"
   local log_dirs=()
@@ -514,7 +532,7 @@ run_installed_nginx_logged() {
 
 # Record nginx build information and test the installed configuration.
 verify_nginx() {
-  [[ "$INSTALL_NGINX" -eq 1 ]] || return
+  [[ "$INSTALL_NGINX" -eq 1 ]] || return 0
 
   run_installed_nginx_logged nginx-version -V
 
