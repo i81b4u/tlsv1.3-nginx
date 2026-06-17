@@ -22,7 +22,7 @@ TLS_BACKEND="openssl"
 #   available from the cloned remote or local source mirror.
 
 # nginx 1.31.1 release
-NGINX_REF="release-1.31.1"
+NGINX_REF="release-1.31.2"
 
 # OpenSSL 4.0.1 release
 OPENSSL_REF="openssl-4.0.1"
