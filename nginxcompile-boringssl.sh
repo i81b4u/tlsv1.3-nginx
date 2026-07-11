@@ -31,9 +31,11 @@ BORINGSSL_REF="0.20260616.0"
 NGX_BROTLI_REF="master"
 
 BORINGSSL_SHA1_PATCH="$SCRIPT_DIR/patches/boringssl-disable-sha1-signatures.patch"
+FORTIFY_SOURCE="${FORTIFY_SOURCE:-3}"
 
 # BoringSSL is built separately with Ninja before nginx is configured.
 require_tls_cmds() {
+  [[ "$FORTIFY_SOURCE" =~ ^[0-3]$ ]] || die "FORTIFY_SOURCE must be an integer from 0 to 3: $FORTIFY_SOURCE"
   require_cmds ninja
 }
 
@@ -65,7 +67,7 @@ build_tls() {
 add_tls_configure_args() {
   CONFIGURE_ARGS+=(
     --with-cc=gcc
-    --with-cc-opt="-g -O3 -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=3 -fPIC -I$BUILD_ROOT/boringssl/include -x c"
+    --with-cc-opt="-g -O3 -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=$FORTIFY_SOURCE -fPIC -I$BUILD_ROOT/boringssl/include -x c"
     --with-ld-opt="-Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -flto=auto -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie -L$BUILD_ROOT/boringssl/build -lstdc++"
   )
 }
