@@ -168,6 +168,16 @@ parse_args() {
   done
 }
 
+# Validate values that are accepted from command-line options or the
+# environment before they are interpolated into build commands.
+validate_options() {
+  [[ -n "$PREFIX" ]] || die "Install prefix must not be empty"
+  [[ -n "$SOURCE_ROOT" ]] || die "Source root must not be empty"
+  [[ -n "$BUILD_ROOT" ]] || die "Build root must not be empty"
+  [[ -n "$LOG_DIR" ]] || die "Log directory must not be empty"
+  [[ "$JOBS" =~ ^[1-9][0-9]*$ ]] || die "Jobs must be a positive integer: $JOBS"
+}
+
 # Fail early when a required external tool is missing.
 require_cmds() {
   local missing=()
@@ -212,7 +222,7 @@ cleanup() {
   fi
 
   log "Cleaning up build directory"
-  rm -rf "$BUILD_ROOT"
+  rm -rf -- "$BUILD_ROOT"
   log "Logs are in: $LOG_DIR"
 }
 
@@ -250,7 +260,7 @@ clone_source() {
   if [[ -d "$local_source/.git" ]]; then
     git clone "$local_source" "$BUILD_ROOT/$name"
   else
-    git clone --recurse-submodules "$url" "$BUILD_ROOT/$name"
+    git clone "$url" "$BUILD_ROOT/$name"
   fi
 
   cd "$BUILD_ROOT/$name"
@@ -280,12 +290,46 @@ apply_patch_file() {
   patch -p1 < "$patch_file"
 }
 
+# Reject build roots whose removal could delete the repository, a broad system
+# directory, or the invoking directory.  realpath -m also normalizes paths
+# such as ".", "..", and paths that do not yet exist.
+validate_build_root() {
+  local build_root source_root script_dir home_dir
+
+  [[ -n "$BUILD_ROOT" ]] || die "Build root must not be empty"
+
+  build_root="$(realpath -m -- "$BUILD_ROOT")"
+  source_root="$(realpath -m -- "$SOURCE_ROOT")"
+  script_dir="$(realpath -m -- "$SCRIPT_DIR")"
+  home_dir=""
+  if [[ -n "${HOME:-}" ]]; then
+    home_dir="$(realpath -m -- "$HOME")"
+  fi
+
+  case "$build_root" in
+    /|/tmp|/var/tmp|"$source_root"|"$script_dir")
+      die "Refusing unsafe build root: $build_root"
+      ;;
+  esac
+
+  if [[ -n "$home_dir" && "$build_root" == "$home_dir" ]]; then
+    die "Refusing unsafe build root: $build_root"
+  fi
+
+  if [[ "$build_root" == "$source_root/"* || "$build_root" == "$script_dir/"* \
+    || "$source_root" == "$build_root/"* || "$script_dir" == "$build_root/"* ]]; then
+    die "Refusing build root that overlaps source files: $build_root"
+  fi
+
+  BUILD_ROOT="$build_root"
+}
+
 # Start every build from a clean temporary directory.
 prepare_build_root() {
-  [[ "$BUILD_ROOT" == / ]] && die "Refusing to use / as build root"
+  validate_build_root
 
-  rm -rf "$BUILD_ROOT"
-  mkdir -p "$BUILD_ROOT" "$LOG_DIR"
+  rm -rf -- "$BUILD_ROOT"
+  mkdir -p -- "$BUILD_ROOT" "$LOG_DIR"
   cd "$BUILD_ROOT"
 }
 
@@ -473,8 +517,11 @@ fix_nginx_permissions() {
   [[ "$INSTALL_NGINX" -eq 1 && "$FIX_PERMISSIONS" -eq 1 ]] || return 0
 
   local install_owner_group="$NGINX_INSTALL_OWNER:$NGINX_INSTALL_GROUP"
+  local runtime_owner_group="www-data:www-data"
   local log_dirs=()
   local log_dir
+  local cache_roots=()
+  local cache_root
 
   as_root test -d "$PREFIX" || die "Install prefix not found: $PREFIX"
   as_root test -f "$PREFIX/sbin/nginx" || die "nginx executable not found: $PREFIX/sbin/nginx"
@@ -484,8 +531,7 @@ fix_nginx_permissions() {
     "$PREFIX/etc/ssl/certs" \
     "$PREFIX/etc/ssl/keys" \
     "$PREFIX/etc/include/sites" \
-    "$PREFIX/etc/include/conf" \
-    "$CLIENT_BODY_TEMP_PATH"
+    "$PREFIX/etc/include/conf"
 
   log "Setting ownership and permissions under $PREFIX"
   as_root find "$PREFIX" -type d -exec chmod 750 {} +
@@ -513,6 +559,33 @@ fix_nginx_permissions() {
     as_root chown "$install_owner_group" "$log_dir"
     as_root find "$log_dir" -type f -exec chmod 640 {} +
     as_root find "$log_dir" -type f -exec chown "$install_owner_group" {} +
+  done
+
+  # nginx workers run as www-data. Keep the cache hierarchy private to that
+  # account so request bodies and upstream temporary files can be created
+  # without exposing their contents to other local users.
+  for cache_root in \
+    "$(dirname "$CLIENT_BODY_TEMP_PATH")" \
+    "$(dirname "$FASTCGI_TEMP_PATH")" \
+    "$(dirname "$PROXY_TEMP_PATH")" \
+    "$(dirname "$SCGI_TEMP_PATH")" \
+    "$(dirname "$UWSGI_TEMP_PATH")"; do
+    [[ " ${cache_roots[*]} " == *" $cache_root "* ]] || cache_roots+=("$cache_root")
+  done
+
+  as_root mkdir -p \
+    "$CLIENT_BODY_TEMP_PATH" \
+    "$FASTCGI_TEMP_PATH" \
+    "$PROXY_TEMP_PATH" \
+    "$SCGI_TEMP_PATH" \
+    "$UWSGI_TEMP_PATH"
+
+  for cache_root in "${cache_roots[@]}"; do
+    log "Setting ownership and permissions under $cache_root"
+    as_root find "$cache_root" -type d -exec chmod 700 {} +
+    as_root find "$cache_root" -type f -exec chmod 600 {} +
+    as_root find "$cache_root" -type d -exec chown "$runtime_owner_group" {} +
+    as_root find "$cache_root" -type f -exec chown "$runtime_owner_group" {} +
   done
 }
 
@@ -545,10 +618,11 @@ verify_nginx() {
 # fetch_tls_source, build_tls, and add_tls_configure_args.
 main() {
   parse_args "$@"
+  validate_options
   trap cleanup EXIT
   set_runtime_paths
 
-  require_cmds git cmake make patch tee
+  require_cmds git cmake make patch tee realpath
   require_tls_cmds
 
   log "Using source root: $SOURCE_ROOT"
