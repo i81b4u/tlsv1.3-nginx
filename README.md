@@ -1,5 +1,7 @@
 # tlsv1.3-nginx
 
+**Before reading any further, I also have a docker [image](https://hub.docker.com/repository/docker/i81b4u/byo-nginx) you can use without having to compile things yourself.**
+
 This is a new version of the scripts I use to compile nginx with either boringssl or openssl.
 Because a lot of the logic used in my previous scripts was the same, I decided to do a rewrite
 to merge most logic and add some features. Another big advantage is that root rights are not
