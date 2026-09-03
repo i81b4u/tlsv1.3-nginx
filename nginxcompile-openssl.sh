@@ -21,8 +21,8 @@ TLS_BACKEND="openssl"
 # - Tags and commit hashes are stable. Branch names follow the branch state
 #   available from the cloned remote or local source mirror.
 
-# nginx 1.31.4 release
-NGINX_REF="release-1.31.4"
+# nginx 1.31.5 release
+NGINX_REF="release-1.31.5"
 
 # OpenSSL 4.0.2 release
 OPENSSL_REF="openssl-4.0.2"
