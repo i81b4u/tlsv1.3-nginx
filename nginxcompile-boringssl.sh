@@ -22,13 +22,13 @@ TLS_BACKEND="boringssl"
 #   available from the cloned remote or local source mirror.
 
 # nginx 1.31.5 release
-NGINX_REF="release-1.31.5"
+NGINX_REF="${NGINX_REF:-release-1.31.5}"
 
 # BoringSSL 0.20260813.0 snapshot
-BORINGSSL_REF="0.20260813.0"
+BORINGSSL_REF="${BORINGSSL_REF:-0.20260813.0}"
 
 # ngx_brotli branch compatible with this nginx build
-NGX_BROTLI_REF="master"
+NGX_BROTLI_REF="${NGX_BROTLI_REF:-master}"
 
 BORINGSSL_SHA1_PATCH="$SCRIPT_DIR/patches/boringssl-disable-sha1-signatures.patch"
 FORTIFY_SOURCE="${FORTIFY_SOURCE:-3}"
@@ -68,7 +68,7 @@ add_tls_configure_args() {
   CONFIGURE_ARGS+=(
     --with-cc=gcc
     --with-cc-opt="-g -O3 -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=$FORTIFY_SOURCE -fPIC -I$BUILD_ROOT/boringssl/include -x c"
-    --with-ld-opt="-Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -flto=auto -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie -L$BUILD_ROOT/boringssl/build -lstdc++"
+    --with-ld-opt="-Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie -L$BUILD_ROOT/boringssl/build -lstdc++"
   )
 }
 

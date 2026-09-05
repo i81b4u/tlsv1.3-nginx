@@ -18,20 +18,21 @@ IFS=$'\n\t'
 : "${NGX_BROTLI_REF:?NGX_BROTLI_REF must be set before sourcing nginx-build-common.sh}"
 
 PROGNAME="$(basename "$0")"
-VERSION="3.0.1"
+VERSION="3.1.0"
 
 # Default build locations. Every value can be overridden from the environment
 # or, for the common paths, by command-line options.
 PREFIX="${PREFIX:-/opt/nginx}"
 SOURCE_ROOT="${SOURCE_ROOT:-$SCRIPT_DIR}"
 BUILD_ROOT="${BUILD_ROOT:-${TMPDIR:-/tmp}/nginx-build-$TLS_BACKEND}"
-LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs/$TLS_BACKEND-$(date +%Y%m%d-%H%M%S)}"
+LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs/$TLS_BACKEND-$(date +%Y%m%d-%H%M%S)-$$}"
 JOBS="${JOBS:-$(nproc)}"
 RUNTIME_ROOT="${RUNTIME_ROOT:-}"
-NGINX_INSTALL_OWNER="${NGINX_INSTALL_OWNER:-www-data}"
-NGINX_INSTALL_GROUP="${NGINX_INSTALL_GROUP:-root}"
+NGINX_INSTALL_OWNER="${NGINX_INSTALL_OWNER:-root}"
+NGINX_INSTALL_GROUP="${NGINX_INSTALL_GROUP:-www-data}"
 
 # Runtime switches controlled by command-line options.
+BUILD_CREATED=0
 KEEP_BUILD=0
 INSTALL_NGINX=1
 APPLY_BRANDING=1
@@ -62,12 +63,12 @@ Usage: $PROGNAME [options]
 Options:
   --prefix DIR       Install prefix. Default: $PREFIX
   --source-root DIR  Source mirror root. Default: $SOURCE_ROOT
-  --build-root DIR   Temporary build root. Default: $BUILD_ROOT
+  --build-root DIR   Parent of private temporary build directories. Default: $BUILD_ROOT
   --log-dir DIR      Build log directory. Default: timestamped directory under ./logs
   --runtime-root DIR Put pid, lock, log, and cache paths under DIR. Default: /var paths
   --jobs N           Parallel build jobs. Default: $JOBS
   --keep-build       Keep the build directory after a successful build
-  --no-install       Build only; do not run make install
+  --no-install       Build and retain the binary; do not run make install
   --no-branding      Do not apply the i81b4u server-header patch
   --no-config-test   Skip nginx -t after install
   --no-fix-permissions
@@ -175,11 +176,29 @@ validate_options() {
   [[ -n "$SOURCE_ROOT" ]] || die "Source root must not be empty"
   [[ -n "$BUILD_ROOT" ]] || die "Build root must not be empty"
   [[ -n "$LOG_DIR" ]] || die "Log directory must not be empty"
+  # nginx's generated shell commands and Makefiles do not safely quote arbitrary paths.
+  local name value
+  for name in PREFIX SOURCE_ROOT BUILD_ROOT LOG_DIR RUNTIME_ROOT; do
+    value="${!name}"
+    [[ -n "$value" ]] || continue
+    [[ "$value" =~ ^[a-zA-Z0-9_./+-]+$ ]] || die "Unsupported characters in $name: $value"
+    printf -v "$name" '%s' "$(realpath -m -- "$value")"
+  done
+  case "$PREFIX" in
+    /|/usr|/usr/local|/opt|/etc|/var|/home|/tmp|/var/tmp|/run|/srv|/bin|/sbin|/lib|/lib64) die "Use a dedicated nginx install prefix: $PREFIX" ;;
+  esac
+  local protected
+  for protected in "$SCRIPT_DIR" "$SOURCE_ROOT" "${HOME:-/}"; do
+    protected="$(realpath -m -- "$protected")"
+    [[ "$protected" != "$PREFIX" && "$protected" != "$PREFIX/"* ]] ||
+      die "Install prefix contains source files or the home directory: $PREFIX"
+  done
   [[ "$JOBS" =~ ^[1-9][0-9]*$ ]] || die "Jobs must be a positive integer: $JOBS"
 }
 
 # Fail early when a required external tool is missing.
 require_cmds() {
+  local cmd
   local missing=()
   for cmd in "$@"; do
     command -v "$cmd" >/dev/null || missing+=("$cmd")
@@ -215,6 +234,8 @@ run_logged() {
 cleanup() {
   local status=$?
 
+  [[ "$BUILD_CREATED" -eq 1 ]] || return 0
+
   if [[ "$KEEP_BUILD" -eq 1 || "$status" -ne 0 ]]; then
     log "Keeping build directory: $BUILD_ROOT"
     log "Logs are in: $LOG_DIR"
@@ -222,6 +243,7 @@ cleanup() {
   fi
 
   log "Cleaning up build directory"
+  cd /
   rm -rf -- "$BUILD_ROOT"
   log "Logs are in: $LOG_DIR"
 }
@@ -265,6 +287,7 @@ clone_source() {
 
   cd "$BUILD_ROOT/$name"
   checkout_ref "$name" "$ref"
+  printf '%s %s %s\n' "$name" "$ref" "$(git rev-parse HEAD)" >> "$LOG_DIR/source-refs.log"
 
   # If ngx_brotli was cloned locally with its Brotli dependency present, point
   # the submodule at that local copy too.
@@ -274,6 +297,7 @@ clone_source() {
 
   if [[ "$update_submodules" -eq 1 ]]; then
     git -c protocol.file.allow=always submodule update --init --recursive
+    git submodule status --recursive >> "$LOG_DIR/source-refs.log"
   fi
 
   cd "$BUILD_ROOT"
@@ -287,7 +311,7 @@ apply_patch_file() {
   [[ -f "$patch_file" ]] || die "Missing patch file: $patch_file"
 
   log "Applying $label"
-  patch -p1 < "$patch_file"
+  patch --batch --forward --fuzz=0 -p1 < "$patch_file"
 }
 
 # Reject build roots whose removal could delete the repository, a broad system
@@ -324,12 +348,19 @@ validate_build_root() {
   BUILD_ROOT="$build_root"
 }
 
-# Start every build from a clean temporary directory.
+# Allocate a private build directory; never delete a caller-supplied directory.
 prepare_build_root() {
   validate_build_root
 
-  rm -rf -- "$BUILD_ROOT"
+  local protected
+  for protected in "$PREFIX" "$LOG_DIR" "${RUNTIME_ROOT:-$PREFIX}"; do
+    [[ "$protected" != "$BUILD_ROOT" && "$protected" != "$BUILD_ROOT/"* ]] ||
+      die "Build root overlaps install, log, or runtime paths: $BUILD_ROOT"
+  done
   mkdir -p -- "$BUILD_ROOT" "$LOG_DIR"
+  BUILD_ROOT="$(mktemp -d "$BUILD_ROOT/build.XXXXXXXX")"
+  BUILD_CREATED=1
+  trap cleanup EXIT
   cd "$BUILD_ROOT"
 }
 
@@ -415,6 +446,9 @@ base_configure_args() {
     --http-uwsgi-temp-path="$UWSGI_TEMP_PATH"
     --user=www-data
     --group=www-data
+    --with-control-api
+    --with-http_json_module
+    --with-pcre-jit
     --with-compat
     --add-module="$BUILD_ROOT/ngx_brotli"
     --with-file-aio
@@ -471,7 +505,8 @@ install_nginx() {
 
   cd "$BUILD_ROOT/nginx"
 
-  if [[ -w "$(dirname "$PREFIX")" ]]; then
+  if [[ -d "$PREFIX" && -w "$PREFIX" ]] ||
+     [[ ! -e "$PREFIX" && -w "$(dirname "$PREFIX")" ]]; then
     run_logged nginx-install make install
   else
     run_logged nginx-install as_root make install
@@ -519,8 +554,10 @@ fix_nginx_permissions() {
   local install_owner_group="$NGINX_INSTALL_OWNER:$NGINX_INSTALL_GROUP"
   local runtime_owner_group="www-data:www-data"
   local log_dirs=()
+  local -A seen_logs=()
   local log_dir
   local cache_roots=()
+  local -A seen_caches=()
   local cache_root
 
   as_root test -d "$PREFIX" || die "Install prefix not found: $PREFIX"
@@ -543,12 +580,18 @@ fix_nginx_permissions() {
   as_root chmod 750 "$PREFIX/sbin/nginx"
 
   log "Restricting nginx private key permissions"
-  as_root find "$PREFIX/etc/ssl/keys" -name '*.key' -type f -exec chmod 440 {} +
+  as_root chown root:root "$PREFIX/etc/ssl/keys"
+  as_root chmod 700 "$PREFIX/etc/ssl/keys"
+  as_root find "$PREFIX/etc/ssl/keys" -type f -exec chown root:root {} +
+  as_root find "$PREFIX/etc/ssl/keys" -type f -exec chmod 600 {} +
 
   # Access and error logs often live in the same directory; only process each
   # directory once to avoid duplicate log messages and duplicate find runs.
   for log_dir in "$(dirname "$HTTP_LOG_PATH")" "$(dirname "$ERROR_LOG_PATH")"; do
-    [[ " ${log_dirs[*]} " == *" $log_dir "* ]] || log_dirs+=("$log_dir")
+    if [[ ! -v "seen_logs[$log_dir]" ]]; then
+      log_dirs+=("$log_dir")
+      seen_logs["$log_dir"]=1
+    fi
   done
 
   for log_dir in "${log_dirs[@]}"; do
@@ -570,7 +613,10 @@ fix_nginx_permissions() {
     "$(dirname "$PROXY_TEMP_PATH")" \
     "$(dirname "$SCGI_TEMP_PATH")" \
     "$(dirname "$UWSGI_TEMP_PATH")"; do
-    [[ " ${cache_roots[*]} " == *" $cache_root "* ]] || cache_roots+=("$cache_root")
+    if [[ ! -v "seen_caches[$cache_root]" ]]; then
+      cache_roots+=("$cache_root")
+      seen_caches["$cache_root"]=1
+    fi
   done
 
   as_root mkdir -p \
@@ -605,12 +651,15 @@ run_installed_nginx_logged() {
 
 # Record nginx build information and test the installed configuration.
 verify_nginx() {
-  [[ "$INSTALL_NGINX" -eq 1 ]] || return 0
+  if [[ "$INSTALL_NGINX" -eq 0 ]]; then
+    run_logged nginx-version "$BUILD_ROOT/nginx/objs/nginx" -V
+    return 0
+  fi
 
   run_installed_nginx_logged nginx-version -V
 
   if [[ "$CONFIG_TEST" -eq 1 ]]; then
-    run_installed_nginx_logged nginx-config-test -t
+    run_logged nginx-config-test as_root "$PREFIX/sbin/nginx" -t
   fi
 }
 
@@ -618,11 +667,12 @@ verify_nginx() {
 # fetch_tls_source, build_tls, and add_tls_configure_args.
 main() {
   parse_args "$@"
+  require_cmds realpath
   validate_options
-  trap cleanup EXIT
+  [[ "$INSTALL_NGINX" -eq 1 ]] || KEEP_BUILD=1
   set_runtime_paths
 
-  require_cmds git cmake make patch tee realpath
+  require_cmds git cmake make patch tee realpath mktemp gcc g++ perl
   require_tls_cmds
 
   log "Using source root: $SOURCE_ROOT"

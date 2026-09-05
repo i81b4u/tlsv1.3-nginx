@@ -22,13 +22,13 @@ TLS_BACKEND="openssl"
 #   available from the cloned remote or local source mirror.
 
 # nginx 1.31.5 release
-NGINX_REF="release-1.31.5"
+NGINX_REF="${NGINX_REF:-release-1.31.5}"
 
 # OpenSSL 4.0.2 release
-OPENSSL_REF="openssl-4.0.2"
+OPENSSL_REF="${OPENSSL_REF:-openssl-4.0.2}"
 
 # ngx_brotli branch compatible with this nginx build
-NGX_BROTLI_REF="master"
+NGX_BROTLI_REF="${NGX_BROTLI_REF:-master}"
 
 # OpenSSL is built by nginx itself through --with-openssl, so there are no
 # extra backend tools to require beyond the common build dependencies.
