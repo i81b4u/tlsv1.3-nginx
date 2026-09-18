@@ -116,7 +116,7 @@ When building the first time the standard configtest can be omitted by issuing a
 ## Build behavior and review notes
 
 Both backends enable `--with-control-api`, `--with-http_json_module`, and PCRE JIT.
-The first two require a sufficiently recent nginx source tree; the default is 1.31.5.
+The first two require a sufficiently recent nginx source tree; the default is 1.31.6.
 See the [nginx configure reference](https://nginx.org/en/docs/configure.html).
 Building control API support does not start a control listener; consult the
 [command-line reference](https://nginx.org/en/docs/switches.html) before using `-l`.
