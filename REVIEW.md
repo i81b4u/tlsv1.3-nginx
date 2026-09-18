@@ -1,3 +1,7 @@
+# Build-script review — 2026-09-18
+
+Updated the build scripts to use nginx 1.31.6.
+
 # Build-script review — 2026-09-05
 
 The two selected TLS backends successfully compile nginx 1.31.5, including all
