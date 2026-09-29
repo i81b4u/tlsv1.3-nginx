@@ -24,8 +24,8 @@ TLS_BACKEND="openssl"
 # nginx 1.31.6 release
 NGINX_REF="${NGINX_REF:-release-1.31.6}"
 
-# OpenSSL 4.0.2 release
-OPENSSL_REF="${OPENSSL_REF:-openssl-4.0.2}"
+# OpenSSL 4.0.3 release
+OPENSSL_REF="${OPENSSL_REF:-openssl-4.0.3}"
 
 # ngx_brotli branch compatible with this nginx build
 NGX_BROTLI_REF="${NGX_BROTLI_REF:-master}"

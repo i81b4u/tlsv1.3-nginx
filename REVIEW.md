@@ -1,3 +1,7 @@
+# Build-script review — 2026-09-29
+
+Updated the build scripts to use OpenSSL 4.0.3 and BoringSSL 0.20260929.0.
+
 # Build-script review — 2026-09-18
 
 Updated the build scripts to use nginx 1.31.6.

@@ -24,8 +24,8 @@ TLS_BACKEND="boringssl"
 # nginx 1.31.6 release
 NGINX_REF="${NGINX_REF:-release-1.31.6}"
 
-# BoringSSL 0.20260813.0 snapshot
-BORINGSSL_REF="${BORINGSSL_REF:-0.20260813.0}"
+# BoringSSL 0.20260929.0 snapshot
+BORINGSSL_REF="${BORINGSSL_REF:-0.20260929.0}"
 
 # ngx_brotli branch compatible with this nginx build
 NGX_BROTLI_REF="${NGX_BROTLI_REF:-master}"
