@@ -21,11 +21,11 @@ TLS_BACKEND="openssl"
 # - Tags and commit hashes are stable. Branch names follow the branch state
 #   available from the cloned remote or local source mirror.
 
-# nginx 1.31.6 release
-NGINX_REF="${NGINX_REF:-release-1.31.6}"
+# nginx 1.31.8 release
+NGINX_REF="${NGINX_REF:-release-1.31.8}"
 
-# OpenSSL 4.0.3 release
-OPENSSL_REF="${OPENSSL_REF:-openssl-4.0.3}"
+# OpenSSL 4.1.0 release
+OPENSSL_REF="${OPENSSL_REF:-openssl-4.1.0}"
 
 # ngx_brotli branch compatible with this nginx build
 NGX_BROTLI_REF="${NGX_BROTLI_REF:-master}"
