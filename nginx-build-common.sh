@@ -18,7 +18,7 @@ IFS=$'\n\t'
 : "${NGX_BROTLI_REF:?NGX_BROTLI_REF must be set before sourcing nginx-build-common.sh}"
 
 PROGNAME="$(basename "$0")"
-VERSION="3.1.0"
+VERSION="3.1.1"
 
 # Default build locations. Every value can be overridden from the environment
 # or, for the common paths, by command-line options.

@@ -1,3 +1,8 @@
+# Build-script review — 2026-10-23
+
+Updated the build scripts to use OpenSSL 4.1.0 and BoringSSL 0.20261020.0.
+The latest available brotli, in this case 1.2.1 is automatically used.
+
 # Build-script review — 2026-09-29
 
 Updated the build scripts to use OpenSSL 4.0.3 and BoringSSL 0.20260929.0.

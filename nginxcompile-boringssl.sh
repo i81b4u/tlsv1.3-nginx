@@ -21,11 +21,11 @@ TLS_BACKEND="boringssl"
 # - Tags and commit hashes are stable. Branch names follow the branch state
 #   available from the cloned remote or local source mirror.
 
-# nginx 1.31.6 release
-NGINX_REF="${NGINX_REF:-release-1.31.6}"
+# nginx 1.31.8 release
+NGINX_REF="${NGINX_REF:-release-1.31.8}"
 
-# BoringSSL 0.20260929.0 snapshot
-BORINGSSL_REF="${BORINGSSL_REF:-0.20260929.0}"
+# BoringSSL 0.20261020.0 snapshot
+BORINGSSL_REF="${BORINGSSL_REF:-0.20261020.0}"
 
 # ngx_brotli branch compatible with this nginx build
 NGX_BROTLI_REF="${NGX_BROTLI_REF:-master}"
